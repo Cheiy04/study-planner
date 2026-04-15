@@ -1,1 +1,22 @@
-{\n  "name": "study-planner",\n  "version": "1.0.0",\n  "description": "A study planner application backend",\n  "main": "index.js",\n  "scripts": {\n    "start": "node index.js"\n  },\n  "dependencies": {\n    "express": "^4.17.1",\n    "sqlite3": "^5.0.2",\n    "cors": "^2.8.5"\n  },\n  "author": "Cheiy04",\n  "license": "ISC"\n}
+{
+  "name": "study-planner",
+  "version": "1.0.0",
+  "description": "Study Planner Application",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "sqlite3": "^5.1.6",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0",
+    "dotenv": "^16.0.3",
+    "pdfkit": "^0.13.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
