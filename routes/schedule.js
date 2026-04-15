@@ -1,4 +1,11 @@
 // routes/schedule.js
+const authenticateToken = require('../middleware/auth');
+
+// Then add middleware to EACH route:
+router.get('/', authenticateToken, (req, res) => { ... });
+router.post('/', authenticateToken, (req, res) => { ... });
+router.put('/:id', authenticateToken, (req, res) => { ... });
+router.delete('/:id', authenticateToken, (req, res) => { ... });
 
 const express = require('express');
 const router = express.Router();
