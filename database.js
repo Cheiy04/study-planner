@@ -52,4 +52,4 @@ const createTables = () => {
 
 createTables();
 
-db.close();
+module.exports = db;
