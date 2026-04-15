@@ -1,39 +1,71 @@
+import axios from 'axios';
+
+const API_BASE_URL = 'http://localhost:5000/api';
+
 const authService = {
-    login: function(username, password) {
-        // API call to log the user in
-        return fetch('/api/login', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username, password})
-        }).then(response => response.json());
-    },
-    register: function(username, password) {
-        // API call to register the user
-        return fetch('/api/register', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username, password})
-        }).then(response => response.json());
-    },
-    logout: function() {
-        // Logic to log the user out
-        localStorage.removeItem('token');
-    },
-    getToken: function() {
-        // Get the token from local storage
-        return localStorage.getItem('token');
-    },
-    getUser: function() {
-        // Decode the token to get user information
-        const token = this.getToken();
-        if (!token) return null;
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload;
-    },
-    isAuthenticated: function() {
-        // Check if user is authenticated
-        return !!this.getToken();
+  login: async (email, password) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+        email,
+        password
+      });
+      if (response.data.token) {
+        localStorage.setItem('authToken', response.data.token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+      }
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Login failed';
     }
+  },
+
+  register: async (name, email, password) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/register`, {
+        name,
+        email,
+        password
+      });
+      if (response.data.token) {
+        localStorage.setItem('authToken', response.data.token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+      }
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Registration failed';
+    }
+  },
+
+  logout: () => {
+    localStorage.removeItem('authToken');
+    delete axios.defaults.headers.common['Authorization'];
+  },
+
+  getToken: () => {
+    return localStorage.getItem('authToken');
+  },
+
+  getUser: () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload;
+    } catch (error) {
+      return null;
+    }
+  },
+
+  isAuthenticated: () => {
+    return !!localStorage.getItem('authToken');
+  },
+
+  setAuthHeader: () => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+  }
 };
 
 export default authService;
