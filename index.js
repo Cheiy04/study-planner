@@ -7,12 +7,14 @@ const scheduleRouter = require('./routes/schedule');
 const tasksRouter = require('./routes/tasks');
 const progressRouter = require('./routes/progress');
 const pdfRouter = require('./routes/pdf');
+const authRouter = require('./routes/auth');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // Mount API routes
+app.use('/api/auth', authRouter);
 app.use('/api/subjects', subjectsRouter);
 app.use('/api/schedule', scheduleRouter);
 app.use('/api/tasks', tasksRouter);
