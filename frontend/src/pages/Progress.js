@@ -1,94 +1,146 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import axios from 'axios';
-import './Progress.css'; // Make sure to create this CSS file for styles
+import './Progress.css';
 
 const Progress = () => {
-    const [progressData, setProgressData] = useState([]);
-    const [totalHours, setTotalHours] = useState(0);
-    const [totalSessions, setTotalSessions] = useState(0);
-    const [averageProgress, setAverageProgress] = useState(0);
+  const [progressData, setProgressData] = useState([]);
+  const [analytics, setAnalytics] = useState({
+    total_hours_studied: 0,
+    total_sessions_completed: 0,
+    average_progress: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await axios.get('/api/progress-data'); // Replace with your API endpoint
-                setProgressData(response.data);
-                calculateMetrics(response.data);
-            } catch (error) {
-                console.error('Error fetching progress data:', error);
-            }
-        };
+  useEffect(() => {
+    fetchProgressData();
+  }, []);
 
-        fetchData();
-    }, []);
+  const fetchProgressData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('authToken');
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      };
 
-    const calculateMetrics = (data) => {
-        const totalHrs = data.reduce((acc, week) => acc + week.hours, 0);
-        const totalSes = data.reduce((acc, week) => acc + week.sessions, 0);
-        const avgProg = data.reduce((acc, week) => acc + week.progress, 0) / data.length;
+      // Fetch progress data
+      const progressResponse = await axios.get(
+        'http://localhost:5000/api/progress',
+        config
+      );
+      setProgressData(progressResponse.data);
 
-        setTotalHours(totalHrs);
-        setTotalSessions(totalSes);
-        setAverageProgress(avgProg);
-    };
+      // Fetch analytics
+      const analyticsResponse = await axios.get(
+        'http://localhost:5000/api/progress/analytics/overview',
+        config
+      );
+      setAnalytics(analyticsResponse.data);
 
-    return (
-        <div className="progress-container">
-            <h1>Progress Analytics</h1>
-            <div className="analytics-cards">
-                <div className="card">
-                    <h2>Total Hours</h2>
-                    <p>{totalHours}</p>
-                </div>
-                <div className="card">
-                    <h2>Total Sessions</h2>
-                    <p>{totalSessions}</p>
-                </div>
-                <div className="card">
-                    <h2>Average Progress</h2>
-                    <p>{averageProgress.toFixed(2)}%</p>
-                </div>
-            </div>
-            <h2>Weekly Progress Graphs</h2>
-            <LineChart width={600} height={300} data={progressData}>
-                <XAxis dataKey="week" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="progress" stroke="#8884d8" activeDot={{ r: 8 }} />
-            </LineChart>
-            <BarChart width={600} height={300} data={progressData}>
-                <XAxis dataKey="week" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="sessions" fill="#82ca9d" />
-                <Bar dataKey="hours" fill="#ffc658" />
-            </BarChart>
-            <h2>Weekly Progress Table</h2>
-            <table className="progress-table">
-                <thead>
-                    <tr>
-                        <th>Week</th>
-                        <th>Hours</th>
-                        <th>Sessions</th>
-                        <th>Target Achievement (%)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {progressData.map((weekData) => (
-                        <tr key={weekData.week}>
-                            <td>{weekData.week}</td>
-                            <td>{weekData.hours}</td>
-                            <td>{weekData.sessions}</td>
-                            <td>{weekData.targetAchievement}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+      setError('');
+    } catch (error) {
+      console.error('Error fetching progress data:', error);
+      setError('Failed to load progress data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="progress-container"><p>Loading...</p></div>;
+  }
+
+  return (
+    <div className="progress-container">
+      <h1>📊 Progress Analytics</h1>
+      
+      {error && <div className="error-message">{error}</div>}
+
+      <div className="analytics-cards">
+        <div className="card">
+          <h2>Total Hours Studied</h2>
+          <p>{analytics.total_hours_studied || 0}h</p>
         </div>
-    );
+        <div className="card">
+          <h2>Sessions Completed</h2>
+          <p>{analytics.total_sessions_completed || 0}</p>
+        </div>
+        <div className="card">
+          <h2>Average Progress</h2>
+          <p>{analytics.average_progress || 0}%</p>
+        </div>
+      </div>
+
+      {progressData.length > 0 ? (
+        <>
+          <div className="progress-chart">
+            <h2>Weekly Study Hours</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={progressData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="week" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="hours_studied" stroke="#8884d8" name="Hours Studied" />
+                <Line type="monotone" dataKey="target_hours" stroke="#82ca9d" name="Target Hours" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="progress-chart">
+            <h2>Sessions Completed by Week</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={progressData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="week" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="sessions_completed" fill="#8884d8" name="Sessions" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="progress-chart">
+            <h2>Detailed Progress Records</h2>
+            <table className="progress-table">
+              <thead>
+                <tr>
+                  <th>Week</th>
+                  <th>Hours Studied</th>
+                  <th>Sessions</th>
+                  <th>Target Hours</th>
+                  <th>Achievement %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {progressData.map((record, index) => (
+                  <tr key={index}>
+                    <td>Week {record.week}</td>
+                    <td>{record.hours_studied}h</td>
+                    <td>{record.sessions_completed}</td>
+                    <td>{record.target_hours}h</td>
+                    <td>
+                      {record.target_hours > 0
+                        ? ((record.hours_studied / record.target_hours) * 100).toFixed(0)
+                        : 0}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        <p>No progress data available yet. Start creating study sessions to see your progress!</p>
+      )}
+    </div>
+  );
 };
 
 export default Progress;
